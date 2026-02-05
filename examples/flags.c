@@ -2,7 +2,8 @@
 
 #include "../lib/cli.h"
 
-DEFINE_REQUIRED_ARG(file_arg, "file", NULL, "Path to output file", ARG_PATH, 0);
+DEFINE_REQUIRED_ARG(file_arg, "file", NULL, "Path to output file", ARG_PATH,
+                    ARG_PATH_EXIST | ARG_PATH_IS_FILE);
 DEFINE_REQUIRED_ARG(rep_flag, "rep", NULL, "Number of reps", ARG_NUMBER, 0);
 DEFINE_OPTIONAL_ARG(name_arg, "--name", "-n", "Name of the user", ARG_STRING,
                     NULL, 0);

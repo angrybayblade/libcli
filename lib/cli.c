@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/stat.h>
+
 #include "./cli.h"
 
 argparse_context_t *make_argparse_ctx(int argc, char **argv) {
@@ -227,7 +229,21 @@ int read_string(arg_nodes_t *args, argument_t *arg) {
 }
 
 int read_path(arg_nodes_t *args, argument_t *arg) {
-  return read_string(args, arg);
+  int ret = read_string(args, arg);
+  if (ret != ARG_PARSE_SUCCESS)
+    return ret;
+
+  struct stat st;
+  if (stat(arg->value.string, &st) == -1 && arg->config & ARG_PATH_EXIST)
+    return ARG_PARSE_ERROR_INVALID_VALUE;
+
+  if (arg->config & ARG_PATH_IS_FILE && S_ISREG(st.st_mode))
+    return ARG_PARSE_SUCCESS;
+
+  if (arg->config & ARG_PATH_IS_DIR && S_ISDIR(st.st_mode))
+    return ARG_PARSE_SUCCESS;
+
+  return ARG_PARSE_ERROR_INVALID_VALUE;
 }
 
 int read_string_array(arg_nodes_t *args, argument_t *arg) {
