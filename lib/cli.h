@@ -8,7 +8,8 @@
 #define ARG_PARSE_ERROR_ALREADY_PARSED 1
 #define ARG_PARSE_ERROR_BAD_CONFIG 2
 #define ARG_PARSE_ERROR_EXTRA_ARGS 3
-#define ARG_PARSE_ERROR_NOT_FOUND 4
+#define ARG_PARSE_ERROR_INVALID_VALUE 4
+#define ARG_PARSE_ERROR_NOT_FOUND 5
 
 #define ARG_PATH_EXIST (1 << 0)
 #define ARG_PATH_IS_DIR (1 << 1)
@@ -48,6 +49,7 @@ typedef enum {
   ARG_PATH,
   ARG_NUMBER_ARRAY,
   ARG_STRING_ARRAY,
+  ARG_COUNTER,
 } ArgumentType;
 
 typedef struct {
@@ -122,6 +124,8 @@ int read_path(arg_nodes_t *args, argument_t *arg);
 
 int read_string_array(arg_nodes_t *args, argument_t *arg);
 
+int read_counter(arg_nodes_t *args, argument_t *arg);
+
 int parse_args(argparse_context_t *ctx, argument_t *slots[],
                argument_t *__help_flag);
 
@@ -135,5 +139,10 @@ int parse_args(argparse_context_t *ctx, argument_t *slots[],
   sprintf(stderr, "[%s:%d %s] ", __FILE__, __LINE__, __func__);                  \
   sprintf(stderr, __VA_ARGS__);                                                \
   sprintf(stderr, "\n")
+#else
+// do nothing
+#define pdbg(...);
+#define perr(...);
+
 #endif // DEBUG
 #endif // LIBFLAG_H

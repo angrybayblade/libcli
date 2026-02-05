@@ -1,7 +1,7 @@
 lib=lib
 cc=gcc
 bin=bin
-test=test
+examples=examples
 
-$(bin)/flags: $(lib)/cli.h $(lib)/cli.c $(test)/flags.c
-	$(cc) $(test)/flags.c $(lib)/cli.c -o $(bin)/flags
+$(bin)/flags: $(lib)/cli.h $(lib)/cli.c $(examples)/flags.c
+	$(cc) $(examples)/flags.c $(lib)/cli.c -o $(bin)/flags -DDEBUG

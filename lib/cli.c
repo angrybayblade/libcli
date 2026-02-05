@@ -3,8 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/ioctl.h>
-
 #include "./cli.h"
 
 argparse_context_t *make_argparse_ctx(int argc, char **argv) {
@@ -88,8 +86,15 @@ void print_cmd_usage(char *cmd, argument_t **args) {
     non_kwdv[idx] = flag->primary_flag;
   }
 
+  int col_size;
+
+#ifdef _SYS_IOCTL_H
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  col_size = w.ws_col;
+#else
+  col_size = 64;
+#endif
 
   printf("Usage: %s [options]", cmd);
   for (int i = 0; i < non_kwdc; i++)
@@ -101,7 +106,10 @@ void print_cmd_usage(char *cmd, argument_t **args) {
   iter = args;
   while ((flag = *iter++))
     if (flag->__kwd)
-      __print_flag__(flag, w.ws_col, opt_size);
+      __print_flag__(flag, col_size, opt_size);
+
+  free(flag);
+  free(non_kwdv);
 }
 
 static void __remove_arg__(arg_nodes_t *args, arg_node_t *arg) {
@@ -117,6 +125,16 @@ static void __remove_arg__(arg_nodes_t *args, arg_node_t *arg) {
     args->tail = prev;
 }
 
+#define remove_arg(args, arg)                                                  \
+  __remove_arg__(args, arg);                                                   \
+  free(arg)
+
+#define remove_arg_with_adj(args, arg)                                         \
+  __remove_arg__(args, arg);                                                   \
+  __remove_arg__(args, arg->next);                                             \
+  free(arg->next);                                                             \
+  free(arg)
+
 int read_boolean(arg_nodes_t *args, argument_t *arg) {
   arg->value.boolean = 0;
   arg_node_t *cursor = args->head;
@@ -126,7 +144,7 @@ int read_boolean(arg_nodes_t *args, argument_t *arg) {
       continue;
     }
     arg->value.boolean = 1;
-    __remove_arg__(args, cursor);
+    remove_arg(args, cursor);
     break;
   }
   return ARG_PARSE_SUCCESS;
@@ -139,7 +157,7 @@ int read_number(arg_nodes_t *args, argument_t *arg) {
       return ARG_PARSE_ERROR_NOT_FOUND;
 
     arg->value.number = atoi(cursor->value);
-    __remove_arg__(args, cursor);
+    remove_arg(args, cursor);
     return ARG_PARSE_SUCCESS;
   }
 
@@ -150,8 +168,7 @@ int read_number(arg_nodes_t *args, argument_t *arg) {
     }
 
     arg->value.number = atoi(cursor->next->value);
-    __remove_arg__(args, cursor);
-    __remove_arg__(args, cursor->next);
+    remove_arg_with_adj(args, cursor);
     return ARG_PARSE_SUCCESS;
   }
 
@@ -162,7 +179,7 @@ int read_number(arg_nodes_t *args, argument_t *arg) {
 
 int read_number_array(arg_nodes_t *args, argument_t *arg) {
   arg->value.number_array = malloc(sizeof(int *));
-  arg_node_t *cursor = args->head;
+  arg_node_t *temp, *cursor = args->head;
   while (cursor) {
     if (!match_flags(arg->primary_flag, arg->secondary_flag, cursor->value)) {
       cursor = cursor->next;
@@ -174,9 +191,9 @@ int read_number_array(arg_nodes_t *args, argument_t *arg) {
         realloc(arg->value.number_array, sizeof(int *) * arg->size);
     arg->value.number_array[idx] = atoi(cursor->next->value);
 
-    __remove_arg__(args, cursor);
-    __remove_arg__(args, cursor->next);
+    temp = cursor;
     cursor = cursor->next->next;
+    remove_arg_with_adj(args, temp);
   }
   return arg->required && arg->size == 0 ? ARG_PARSE_ERROR_NOT_FOUND
                                          : ARG_PARSE_SUCCESS;
@@ -200,8 +217,7 @@ int read_string(arg_nodes_t *args, argument_t *arg) {
     }
 
     arg->value.string = cursor->next->value;
-    __remove_arg__(args, cursor);
-    __remove_arg__(args, cursor->next);
+    remove_arg_with_adj(args, cursor);
     return ARG_PARSE_SUCCESS;
   }
 
@@ -216,7 +232,7 @@ int read_path(arg_nodes_t *args, argument_t *arg) {
 
 int read_string_array(arg_nodes_t *args, argument_t *arg) {
   arg->value.string_array = malloc(sizeof(char *));
-  arg_node_t *cursor = args->head;
+  arg_node_t *temp, *cursor = args->head;
   while (cursor) {
     if (!match_flags(arg->primary_flag, arg->secondary_flag, cursor->value)) {
       cursor = cursor->next;
@@ -228,9 +244,35 @@ int read_string_array(arg_nodes_t *args, argument_t *arg) {
         realloc(arg->value.string_array, sizeof(char *) * arg->size);
     arg->value.string_array[idx] = cursor->next->value;
 
-    __remove_arg__(args, cursor);
-    __remove_arg__(args, cursor->next);
+    temp = cursor;
     cursor = cursor->next->next;
+    remove_arg_with_adj(args, temp);
+  }
+  return ARG_PARSE_SUCCESS;
+}
+
+int read_counter(arg_nodes_t *args, argument_t *arg) {
+  arg_node_t *temp, *cursor = args->head;
+  arg->value.number = 0;
+
+  char c, *iter;
+  char denom = *(arg->primary_flag + 1);
+  while (cursor) {
+    if (*(cursor->value + 1) != denom)
+      goto cont;
+
+    iter = cursor->value + 1;
+    while ((c = *iter++)) {
+      if (c != denom)
+        goto cont;
+      arg->value.number++;
+    }
+    remove_arg(args, cursor);
+    return ARG_PARSE_SUCCESS;
+
+  cont:
+    cursor = cursor->next;
+    continue;
   }
   return ARG_PARSE_SUCCESS;
 }
@@ -253,6 +295,8 @@ int parse_arg(argparse_context_t *ctx, argument_t *arg) {
     return read_boolean(ctx->args, arg);
   case ARG_PATH:
     return read_path(ctx->args, arg);
+  case ARG_COUNTER:
+    return read_counter(ctx->args, arg);
   }
 };
 
