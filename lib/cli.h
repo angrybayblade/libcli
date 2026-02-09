@@ -5,11 +5,10 @@
 
 #define ARG_ERROR_UNKNOWN -1
 #define ARG_PARSE_SUCCESS 0
-#define ARG_PARSE_ERROR_ALREADY_PARSED 1
-#define ARG_PARSE_ERROR_BAD_CONFIG 2
-#define ARG_PARSE_ERROR_EXTRA_ARGS 3
-#define ARG_PARSE_ERROR_INVALID_VALUE 4
-#define ARG_PARSE_ERROR_NOT_FOUND 5
+#define ARG_PARSE_ERROR_BAD_CONFIG 1
+#define ARG_PARSE_ERROR_EXTRA_ARGS 2
+#define ARG_PARSE_ERROR_INVALID_VALUE 2
+#define ARG_PARSE_ERROR_NOT_FOUND 3
 
 #define ARG_PATH_EXIST (1 << 0)
 #define ARG_PATH_IS_DIR (1 << 1)
@@ -78,7 +77,6 @@ typedef struct {
   int __primary_flag_len;
   int __secondary_flag_len;
   int __printable_flag_len;
-  int __parsed;
 } argument_t;
 
 #define DEFINE_REQUIRED_ARG(name, flag_p, flag_s, help, type, config)          \

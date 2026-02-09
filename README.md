@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
 ## Error Codes
 
 - `ARG_PARSE_SUCCESS`: Success
-- `ARG_PARSE_ERROR_ALREADY_PARSED`: Argument already parsed
 - `ARG_PARSE_ERROR_BAD_CONFIG`: Bad configuration
 - `ARG_PARSE_ERROR_EXTRA_ARGS`: Extra arguments found
 - `ARG_PARSE_ERROR_INVALID_VALUE`: Invalid value

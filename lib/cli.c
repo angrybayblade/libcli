@@ -294,10 +294,6 @@ int read_counter(arg_nodes_t *args, argument_t *arg) {
 }
 
 int parse_arg(argparse_context_t *ctx, argument_t *arg) {
-  if (arg->__parsed)
-    return ARG_PARSE_ERROR_ALREADY_PARSED;
-
-  arg->__parsed = 1;
   switch (arg->type) {
   case ARG_STRING:
     return read_string(ctx->args, arg);
