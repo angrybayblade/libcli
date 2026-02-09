@@ -36,6 +36,12 @@ int main(int argc, char *argv[]) {
   if (user_group_arg.value.string)
     printf("user group: %s\n", user_group_arg.value.string);
 
+  if (user_id_arg.value.number)
+    printf("user id: %d\n", user_id_arg.value.number);
+
+  if (verbosity_arg.value.number)
+    printf("verbosity: %d\n", verbosity_arg.value.number);
+
   return 0;
 }
 ```

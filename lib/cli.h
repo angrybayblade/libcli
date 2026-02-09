@@ -35,7 +35,7 @@ typedef union {
   char *path;
 
   // flag
-  int boolean;
+  unsigned int boolean:1;
 
   // null
   void *null;
